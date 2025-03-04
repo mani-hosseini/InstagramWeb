@@ -1,50 +1,59 @@
-import {useState} from "react";
-import {useNavigate} from "react-router-dom";
 import {useForm} from "react-hook-form";
 import {yupResolver} from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import {useNavigate} from "react-router-dom";
 import {client} from "../../lib/axios.js";
 import {toast} from "react-toastify";
 
 const schema = yup.object().shape({
+    email: yup.string().email("Invalid email format").required("Email is required"),
     username: yup.string().required("Username is required"),
-    password: yup.string().min(6, 'Password must be at least 6 characters').required("Password is required"),
+    password: yup.string().required("Password is required")
 });
 
-function Login() {
-
+function Signup() {
     const navigate = useNavigate();
-    const [error, setError] = useState('');
 
     const {
         register, handleSubmit, formState: {errors},
     } = useForm({
-        resolver: yupResolver(schema),
+        resolver: yupResolver(schema), mode: "onChange",
     });
 
-    const onSubmit = async (data) => {
-        setError('');
+    async function submitForm(user) {
+        console.log("Submitting user data:", user);
         try {
-            const response = await client.post("/user/login", data);
+            const response = await client.post("/user/signup", user);
+            console.log("Response:", response.data);
             localStorage.setItem("token", response.data.jwt);
-            localStorage.setItem("user", JSON.stringify(response.data.user));
             toast.success("User added successfully!");
-            navigate("/home");
-            console.log("Successfully logged in");
-        } catch (error) {
-            navigate("/signup");
+            navigate("/");
+        } catch (err) {
+            console.error("Error response:", err.response);
             toast.error("Error creating user");
-            console.log('error');
         }
-    };
+    }
 
 
     return (<section className="flex items-center justify-center min-h-screen gap-x-8">
-        <div><img src="../../src/assets/signup/Group%2091.png" className={'w-[90%]'} alt=""/></div>
-        <form onSubmit={handleSubmit(onSubmit)}
-              className="bg-white border border-gray-200 p-6 rounded-lg shadow-lg max-w-[400px] w-full">
+        <div>
+            <img src="../../src/assets/signup/Group%2091.png" className="w-[90%]" alt=""/>
+        </div>
+        <form
+            onSubmit={handleSubmit(submitForm)}
+            className="bg-white border border-gray-200 p-6 rounded-lg shadow-lg max-w-[400px] w-full"
+        >
             <div className="mb-4 flex justify-center">
                 <img src="../../src/assets/signup/insta%20logo.png" alt=""/>
+            </div>
+            <div className="mb-4">
+                <input
+                    type="email"
+                    placeholder="Email"
+                    className="w-full p-3 border border-gray-300 rounded-lg"
+                    {...register("email")}
+                />
+                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
             </div>
             <div className="mb-4">
                 <input
@@ -69,15 +78,14 @@ function Login() {
                     type="submit"
                     className="w-full cursor-pointer py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300"
                 >
-                    Login
+                    Signup
                 </button>
             </div>
-            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
             <div className="mt-32 text-center">
                 <p className="text-gray-600">
-                    Don’t have an account?{' '}
-                    <a href="/signup" className="text-blue-500 hover:text-blue-600">
-                        Signup
+                    Already have an account?{" "}
+                    <a href="/" className="text-blue-500 hover:text-blue-600">
+                        Login
                     </a>
                 </p>
             </div>
@@ -85,4 +93,4 @@ function Login() {
     </section>);
 }
 
-export default Login;
+export default Signup;
