@@ -3,6 +3,7 @@ import {useNavigate} from "react-router-dom";
 import {useForm} from "react-hook-form";
 import {yupResolver} from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import {client} from "../../lib/axios.js";
 
 const schema = yup.object().shape({
     username: yup.string().required("Username is required"),
@@ -10,6 +11,9 @@ const schema = yup.object().shape({
 });
 
 function Login() {
+
+    const navigate = useNavigate();
+    const [error, setError] = useState('');
 
     const {
         register,
@@ -19,9 +23,22 @@ function Login() {
         resolver: yupResolver(schema),
     });
 
-    const onSubmit = (data) => {
-        console.log(data);
-        // navigate("/dashboard");
+    const onSubmit = async (data) => {
+        setError('');
+        try {
+            const response = await client.post("/api/user/login", data);
+            localStorage.setItem("token", response.data.jwt);
+            localStorage.setItem("user", JSON.stringify(response.data.user));
+            navigate("/home");
+        } catch (error) {
+            const message = error?.response?.data?.message || "Something went wrong";
+            setError(message);
+
+            if (message === "User not found") {
+                alert("No account found, please sign up!");
+                navigate("/signup");
+            }
+        }
     };
 
     return (
@@ -58,6 +75,7 @@ function Login() {
                         Login
                     </button>
                 </div>
+                {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
                 <div className="mt-32 text-center">
                     <p className="text-gray-600">
                         Don’t have an account?{' '}
